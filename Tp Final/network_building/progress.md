@@ -1,0 +1,14 @@
+## Ideas para el análisis:
+- Distribución de grado de los paquetes
+- Medidas de centralidad // conectividad:
+    - Centralidad por grado (ojo con dirigida)
+    - Centralidad por conectividad / Betweenness
+- Comunidades
+- Motifs (???)
+- Campos sobre los nodos:
+    - Topics (tags)
+    - Descargas (aparecen en algunas, en otras no)
+    - Citations (en principio no va. (http://depsy.org))
+    - Stars (idem descargas)
+    - Campo trófico (para ver qué librerias son low level y cuáles high-level)
+- Vulnerabilidades frente a bugs (podría llegar a ser el punto central del análisis)
