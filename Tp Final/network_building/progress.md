@@ -4,6 +4,7 @@
     - Centralidad por grado (ojo con dirigida)
     - Centralidad por conectividad / Betweenness
 - Comunidades
+    - Encoders (metodo de encoder-decoder)
 - Motifs (???)
 - Campos sobre los nodos:
     - Topics (tags)
