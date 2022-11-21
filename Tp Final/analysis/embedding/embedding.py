@@ -1,23 +1,22 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
-import node2vec as n2v
 
 from utils.learn import learn_embeddings
 from utils.graph import Graph
 
 if __name__ == "__main__":
-    path_to_gexf = "state_files/PyPi Network V4.gexf"
+    path_to_gexf = "state_files/red_artistas.gexf"
 
     # Arguments.
     p = 1
     q = 1
-    directed = True
-    num_walks = 1
-    walk_length = 10
-    dimensions = 1
+    directed = False
+    num_walks = 30
+    walk_length = 80
+    dimensions = 8
     window_size = 10
-    workers = 4
+    workers = 1
     epochs = 1
     output = "output 3d.emb"
 

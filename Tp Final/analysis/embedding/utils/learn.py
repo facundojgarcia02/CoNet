@@ -7,6 +7,6 @@ def learn_embeddings(walks, dimensions = 128, window_size = 10, workers = 4, epo
 
 	walks = [map(str, walk) for walk in walks]
 	model = Word2Vec(walks, vector_size=dimensions, window=window_size, min_count=4, sg=1, workers=workers, epochs=epochs)
-	model.save_word2vec_format(output)
+	model.save(output)
 	
 	return None
