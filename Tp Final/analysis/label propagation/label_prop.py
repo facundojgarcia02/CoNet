@@ -1,9 +1,8 @@
 import networkx as nx
-import numpy as np
 import matplotlib.pyplot as plt
 
-from random import shuffle, choice
-
+from random import choice
+from tqdm import tqdm
 
 class GraphError(Exception):
     pass
@@ -18,9 +17,13 @@ class PropagateLabels:
     def __init__(self, G, initial_labels, DEBUG=False):
         self.G = G.copy()
         self.labels = initial_labels
+        self.G_reversed = G.reverse()
 
-        self.backup_G = G.copy()
         self.backup_labels = initial_labels.copy()
+
+        nodes = G.nodes()
+        self.neighbors = {node: nx.neighbors(self.G, node) for node in nodes}
+        self.reversed_neighbors = {node: nx.neighbors(self.G_reversed, node) for node in nodes}
 
         self.DEBUG = DEBUG
 
@@ -28,7 +31,6 @@ class PropagateLabels:
         """
         Restart propagation.
         """
-        self.G = self.backup_G.copy()
         self.labels = self.backup_labels.copy()
 
     def propagate_once(self) -> dict:
@@ -37,6 +39,8 @@ class PropagateLabels:
 
         Returns:
             - dict: Propagated labels.
+        Raises:
+            - ValueError: If all nodes are already labels.
         """
 
         # Si ya están todos etiquetados no hacemos nada.
@@ -46,32 +50,25 @@ class PropagateLabels:
         # Nodos con etiqueta sobre los que vamos a comenzar a iterar.
         nodes_with_labels = list(self.labels.keys()).copy()
 
-        if self.DEBUG:
-            print("DEBUG - Nodos etiquetados:")
-            print(nodes_with_labels)
-
         # Buscamos los vecinos de los nodos etiquetados.
         first_order_neighbors = []
-        for node in nodes_with_labels:
-            neighbors = nx.neighbors(self.G, node)
+        for node in tqdm(nodes_with_labels):
+            neighbors = self.neighbors[node]
             # Nos quedamos con los que no están etiquetados o ya guardamos.
             for neigh in neighbors:
-                if neigh not in nodes_with_labels + first_order_neighbors:
+                if (neigh not in nodes_with_labels) and (neigh not in first_order_neighbors):
                     first_order_neighbors.append(neigh)
 
-        if self.DEBUG:
-            print("DEBUG - Vecinos de los etiquetados:")
-            print(first_order_neighbors)
 
         # Pedimos los vecinos de cada nodo encontrado a primer orden. Nos fijamos
         # los que están etiquetados solamente.
         posible_labels = {}
         # Para buscar de donde vienen los nodos que encontramos.
-        reversed_G = self.G.reverse()
-        for node in first_order_neighbors:
+
+        for node in tqdm(first_order_neighbors):
             # Guardamos una lista con las etiquetas de los vecinos etiquetados.
             posible_labels[node] = []
-            neighbors = nx.neighbors(reversed_G, node)
+            neighbors = self.reversed_neighbors[node]
             for neigh in neighbors:
                 if neigh in nodes_with_labels:
                     # Si el nodo original tiene una sola etiqueta o mas:
@@ -79,10 +76,6 @@ class PropagateLabels:
                         posible_labels[node] += self.labels[neigh]
                     else:
                         posible_labels[node].append(self.labels[neigh])
-
-        if self.DEBUG:
-            print("DEBUG - Etiquetas recoletadas:")
-            print(posible_labels)
 
         propagated_labels = {}
         # Finalmente elegimos UNA etiqueta (Se puede cambiar mas adelante):
@@ -109,10 +102,15 @@ class PropagateLabels:
         if not nx.is_connected(self.G.to_undirected()):
             raise GraphError("Graph must have one component.")
 
+        amount_of_labels = []
         while len(self.labels) < len(self.G.nodes()):
             self.propagate_once()
             print(f"{len(self.labels)} nodos etiquetados de {len(self.G.nodes())}.")
-
+            if amount_of_labels == len(self.labels):
+                print("No se encontraron nuevas etiquetas.")
+                break
+            else:
+                amount_of_labels = len(self.labels)
         return self.labels
 
 
