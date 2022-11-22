@@ -4,34 +4,13 @@ import matplotlib.pyplot as plt
 from random import choice
 from tqdm import tqdm
 
-class GraphError(Exception):
-    pass
+from utils.propagatelabels import PropagateLabels, GraphError
 
-
-class PropagateLabels:
+class PropagateUndirected(PropagateLabels):
     """
-    Given a network G and initial labels, propagate labels throw all graph.
+    Given a network G and initial labels, propagate labels through all undirected graph.
     Currently limited to only one label for each propagated node.
     """
-
-    def __init__(self, G, initial_labels, DEBUG=False):
-        self.G = G.copy()
-        self.labels = initial_labels
-        self.G_reversed = G.reverse()
-
-        self.backup_labels = initial_labels.copy()
-
-        nodes = G.nodes()
-        self.neighbors = {node: nx.neighbors(self.G, node) for node in nodes}
-        self.reversed_neighbors = {node: nx.neighbors(self.G_reversed, node) for node in nodes}
-
-        self.DEBUG = DEBUG
-
-    def restart(self):
-        """
-        Restart propagation.
-        """
-        self.labels = self.backup_labels.copy()
 
     def propagate_once(self) -> dict:
         """
@@ -63,12 +42,11 @@ class PropagateLabels:
         # Pedimos los vecinos de cada nodo encontrado a primer orden. Nos fijamos
         # los que están etiquetados solamente.
         posible_labels = {}
-        # Para buscar de donde vienen los nodos que encontramos.
 
         for node in tqdm(first_order_neighbors):
             # Guardamos una lista con las etiquetas de los vecinos etiquetados.
             posible_labels[node] = []
-            neighbors = self.reversed_neighbors[node]
+            neighbors = self.neighbors[node]
             for neigh in neighbors:
                 if neigh in nodes_with_labels:
                     # Si el nodo original tiene una sola etiqueta o mas:
@@ -113,14 +91,13 @@ class PropagateLabels:
                 amount_of_labels = len(self.labels)
         return self.labels
 
-
 if __name__ == "__main__":
     # Test network.
     edges = [(1, 2), (2, 3), (4, 3), (1, 4), (1, 5),
              (5, 4), (3, 6), (4, 6), (6, 7)]
     labels = {1: "Science", 2: "Internet", 5: "Religion"}
 
-    G = nx.DiGraph(edges)
+    G = nx.Graph(edges)
 
     pg = PropagateLabels(G, labels)
     final_labels = pg.propagate_all()
