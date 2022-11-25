@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 
 from random import choice
 from tqdm import tqdm
+from collections import Counter
 
 from utils.propagatelabels import PropagateLabels, GraphError
 
@@ -12,8 +13,8 @@ class PropagateDirected(PropagateLabels):
     Currently limited to only one label for each propagated node.
     """
 
-    def __init__(self, G, initial_labels):
-        super().__init__(G, initial_labels)
+    def __init__(self, G, initial_labels, method):
+        super().__init__(G, initial_labels, method)
 
         # Required for finding neighbors in directed graph.
         self.G_reversed = G.reverse()
@@ -64,10 +65,48 @@ class PropagateDirected(PropagateLabels):
                         posible_labels[node].append(self.labels[neigh])
 
         propagated_labels = {}
-        # Finalmente elegimos UNA etiqueta (Se puede cambiar mas adelante):
-        for node, labels in posible_labels.items():
-            propagated_labels[node] = choice(labels)
+        if self.method == "probability":
+            # Finalmente elegimos UNA etiqueta (Se puede cambiar mas adelante):
+            for node, labels in posible_labels.items():
+                propagated_labels[node] = choice(labels)
+        
+        elif self.method == "local":
+            for node, labels in posible_labels.items():
+                # Nos fijamos cual aparece mas seguido.
+                count_labels = Counter(labels)
+                labels_by_count = dict(sorted(count_labels.items(), key = lambda x: x[1], reverse=True))
+                # Si hay empate entre dos o mas con la misma cantidad.
+                most_common = list(labels_by_count.values())[0]
+                if Counter(labels_by_count.values())[most_common] > 1:
+                    propagated_labels[node] = choice([l for l, c in labels_by_count.items() if c == most_common])
+                else:
+                    propagated_labels[node] = list(labels_by_count.keys())[0]
 
+        elif self.method == "global":
+            # Recolecto todas las etiquetas que me dieron en esta iteración.
+            label_collector = []
+            for n, l in self.labels.items():
+                if isinstance(l, list):
+                    label_collector += l
+                elif isinstance(l, str):
+                    label_collector += [l]
+                else:
+                    raise Exception("No deberían haber etiquetas que no sean listas o str.")
+
+            ### Idea: El peso para elegir cada tópico va a ser peso local / peso global.
+            
+            # Peso global.
+            global_weights = {t: v/len(label_collector) for t, v in Counter(label_collector).items()}
+            
+            # Peso local:
+            for node, labels in posible_labels.items():
+                local_weights = {t: v/len(labels) for t, v in Counter(labels).items()}
+                
+                labels_by_weight = {t: local_weights[t]/global_weights[t] for t in local_weights.keys()}
+                labels_by_weight = dict(sorted(labels_by_weight.items(), key = lambda x: x[1], reverse=True))
+                
+                propagated_labels[node] = list(labels_by_weight.keys())[0]
+                
         # Guardamos las etiquetas finales: Etiquetas iniciales + obtenidas.
         final_labels = {**self.labels, **propagated_labels}
         self.labels = final_labels

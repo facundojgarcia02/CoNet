@@ -24,10 +24,11 @@ class IPropagate(metaclass = ABCMeta):
 
 class PropagateLabels(IPropagate):
     
-    def __init__(self, G, initial_labels) -> None:
+    def __init__(self, G, initial_labels, method) -> None:
         self.G = G.copy()
         self.labels = initial_labels
-
+        self.method = method
+        
         self.backup_labels = initial_labels.copy()
 
         self.nodes = G.nodes()
